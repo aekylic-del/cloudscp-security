@@ -176,8 +176,9 @@ app.post('/requests/log-new', async (req, res) => {
   }
 });
 
-app.listen(process.env.INTERNAL_API_PORT || 3001, () => {
-  console.log(`Internal API listening on port ${process.env.INTERNAL_API_PORT || 3001}`);
+const PORT = process.env.PORT || process.env.INTERNAL_API_PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Internal API listening on port ${PORT}`);
 });
 
 // ============================================================
