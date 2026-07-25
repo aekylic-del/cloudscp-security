@@ -1,0 +1,16 @@
+{
+  "name": "cloudscp-security",
+  "version": "1.0.0",
+  "description": "cloudscp verification (role grant) + server activity logging bot",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "pg": "^8.13.1"
+  }
+}
