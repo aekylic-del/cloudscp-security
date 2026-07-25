@@ -124,11 +124,13 @@ app.post('/verify/blacklist', async (req, res) => {
       });
     }
 
+    const label = member ? member.user.tag : discordId;
+
     await logEvent(client, {
       guildId: GUILD_ID,
       category: 'VERIFICATION',
       targetId: discordId,
-      summary: `Blacklisted and kicked — ${reason}`,
+      summary: `Blacklisted and kicked ${label} — ${reason}`,
       data: { reason },
     });
 
