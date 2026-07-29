@@ -266,8 +266,18 @@ client.on('userUpdate', async (oldUser, newUser) => {
   });
 });
 
+const EXCLUDED_LOG_CHANNEL_IDS = [
+  process.env.DISCORD_CHANNEL_JOIN_LEAVE,
+  process.env.DISCORD_CHANNEL_VERIFICATION,
+  process.env.DISCORD_CHANNEL_MESSAGE_LOGS,
+  process.env.DISCORD_CHANNEL_SERVER_UPDATES,
+  process.env.DISCORD_CHANNEL_MEMBER_UPDATES,
+  '1487818795048374435', // owners groupchat
+].filter(Boolean);
+
 client.on('messageDelete', async (message) => {
   if (!message.guild || message.author?.bot) return;
+  if (EXCLUDED_LOG_CHANNEL_IDS.includes(message.channel.id)) return;
   await logEvent(client, {
     guildId: message.guild.id,
     category: 'MESSAGE_DELETE',
@@ -280,6 +290,7 @@ client.on('messageDelete', async (message) => {
 
 client.on('messageUpdate', async (oldMessage, newMessage) => {
   if (!newMessage.guild || newMessage.author?.bot) return;
+  if (EXCLUDED_LOG_CHANNEL_IDS.includes(newMessage.channel.id)) return;
   if (oldMessage.content === newMessage.content) return;
 
   await logEvent(client, {
