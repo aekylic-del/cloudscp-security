@@ -223,16 +223,29 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
   const addedRoles = newMember.roles.cache.filter((r) => !oldMember.roles.cache.has(r.id));
   const removedRoles = oldMember.roles.cache.filter((r) => !newMember.roles.cache.has(r.id));
 
-  if (addedRoles.size || removedRoles.size) {
-    const parts = [];
-    if (addedRoles.size) parts.push(`+${addedRoles.map((r) => r.name).join(', ')}`);
-    if (removedRoles.size) parts.push(`-${removedRoles.map((r) => r.name).join(', ')}`);
+  for (const role of addedRoles.values()) {
     await logEvent(client, {
       guildId: newMember.guild.id,
       category: 'MEMBER_UPDATE',
       targetId: newMember.id,
-      summary: `${newMember.user.tag} roles changed: ${parts.join(' ')}`,
-      data: { added: addedRoles.map((r) => r.id), removed: removedRoles.map((r) => r.id) },
+      summary: `${newMember.user.tag} role added: ${role.name}`,
+      data: { added: [role.id] },
+      member: newMember,
+      title: 'Role added',
+      description: `${role}`,
+    });
+  }
+
+  for (const role of removedRoles.values()) {
+    await logEvent(client, {
+      guildId: newMember.guild.id,
+      category: 'MEMBER_UPDATE',
+      targetId: newMember.id,
+      summary: `${newMember.user.tag} role removed: ${role.name}`,
+      data: { removed: [role.id] },
+      member: newMember,
+      title: 'Role removed',
+      description: `${role}`,
     });
   }
 
@@ -243,6 +256,9 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
       targetId: newMember.id,
       summary: `${newMember.user.tag} nickname: "${oldMember.nickname ?? '(none)'}" → "${newMember.nickname ?? '(none)'}"`,
       data: { before: oldMember.nickname, after: newMember.nickname },
+      member: newMember,
+      title: 'Nickname updated',
+      description: `${oldMember.nickname ?? '*none*'} → ${newMember.nickname ?? '*none*'}`,
     });
   }
 });
@@ -253,17 +269,34 @@ client.on('userUpdate', async (oldUser, newUser) => {
   const guild = client.guilds.cache.get(GUILD_ID);
   if (!guild || !guild.members.cache.has(newUser.id)) return;
 
-  const changes = [];
-  if (oldUser.username !== newUser.username) changes.push(`username "${oldUser.username}" → "${newUser.username}"`);
-  if (oldUser.avatar !== newUser.avatar) changes.push('avatar changed');
+  const member = guild.members.cache.get(newUser.id);
 
-  await logEvent(client, {
-    guildId: GUILD_ID,
-    category: 'MEMBER_UPDATE',
-    targetId: newUser.id,
-    summary: `${newUser.tag}: ${changes.join(', ')}`,
-    data: { before: { username: oldUser.username }, after: { username: newUser.username } },
-  });
+  if (oldUser.username !== newUser.username) {
+    await logEvent(client, {
+      guildId: GUILD_ID,
+      category: 'MEMBER_UPDATE',
+      targetId: newUser.id,
+      summary: `${newUser.tag} username: "${oldUser.username}" → "${newUser.username}"`,
+      data: { before: { username: oldUser.username }, after: { username: newUser.username } },
+      member: member ?? newUser,
+      title: 'Username updated',
+      description: `${oldUser.username} → ${newUser.username}`,
+    });
+  }
+
+  if (oldUser.avatar !== newUser.avatar) {
+    await logEvent(client, {
+      guildId: GUILD_ID,
+      category: 'MEMBER_UPDATE',
+      targetId: newUser.id,
+      summary: `${newUser.tag} avatar changed`,
+      data: {},
+      member: member ?? newUser,
+      title: 'Avatar update',
+      description: `${newUser}`,
+      thumbnailURL: newUser.displayAvatarURL({ size: 256 }),
+    });
+  }
 });
 
 const EXCLUDED_LOG_CHANNEL_IDS = [

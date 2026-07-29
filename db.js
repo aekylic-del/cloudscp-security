@@ -13,7 +13,7 @@ const CATEGORY_CONFIG = {
   MESSAGE_DELETE: { emoji: '✦', color: Colors.Red, channelEnv: 'DISCORD_CHANNEL_MESSAGE_LOGS' },
   MESSAGE_EDIT: { emoji: '✦', color: Colors.Yellow, channelEnv: 'DISCORD_CHANNEL_MESSAGE_LOGS' },
   SERVER_UPDATE: { emoji: '✦', color: Colors.Purple, channelEnv: 'DISCORD_CHANNEL_SERVER_UPDATES' },
-  MEMBER_UPDATE: { emoji: '✦', color: Colors.Grey, channelEnv: 'DISCORD_CHANNEL_MEMBER_UPDATES' },
+  MEMBER_UPDATE: { emoji: '✦', color: Colors.DarkGrey, channelEnv: 'DISCORD_CHANNEL_MEMBER_UPDATES' },
 };
 
 function ordinal(n) {
@@ -70,11 +70,24 @@ function buildJoinLeaveEmbed({ targetId, data }) {
     .setTimestamp();
 }
 
+function buildMemberEventEmbed({ member, title, description, thumbnailURL }) {
+  const target = member.user ?? member;
+  const embed = new EmbedBuilder()
+    .setAuthor({ name: target.tag, iconURL: target.displayAvatarURL({ size: 32 }) })
+    .setTitle(title)
+    .setDescription(description)
+    .setColor(Colors.DarkGrey)
+    .setFooter({ text: `ID: ${member.id}` })
+    .setTimestamp();
+  if (thumbnailURL) embed.setThumbnail(thumbnailURL);
+  return embed;
+}
+
 /**
  * Writes a row to the LogEntry table the Next.js dashboard reads from,
  * and posts an embed to that category's channel.
  */
-async function logEvent(client, { guildId, category, actorId, targetId, summary, data }) {
+async function logEvent(client, { guildId, category, actorId, targetId, summary, data, member, title, description, thumbnailURL }) {
   await pool.query(
     `INSERT INTO "LogEntry" (id, "guildId", category, "actorId", "targetId", summary, data, "createdAt")
      VALUES ($1, $2, $3, $4, $5, $6, $7, now())`,
@@ -99,7 +112,9 @@ async function logEvent(client, { guildId, category, actorId, targetId, summary,
   const embed =
     category === 'JOIN_LEAVE'
       ? buildJoinLeaveEmbed({ targetId, data })
-      : new EmbedBuilder().setDescription(`${config.emoji} ${summary}`).setColor(config.color).setTimestamp();
+      : member && title
+        ? buildMemberEventEmbed({ member, title, description, thumbnailURL })
+        : new EmbedBuilder().setDescription(`${config.emoji} ${summary}`).setColor(config.color).setTimestamp();
 
   await channel.send({ embeds: [embed] }).catch(() => null);
 }
